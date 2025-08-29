@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportsTab } from "@/components/reports/ReportsTab";
+import { SettingsTab } from "@/components/settings/SettingsTab";
 import { 
   Shield, 
   Users, 
@@ -26,14 +28,22 @@ import {
   Loader2
 } from "lucide-react";
 import { AIAssistant } from "@/components/AIAssistant";
+import { AssetThreatsView } from "@/components/AssetThreatsView";
 
 const SOCDashboard = () => {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
+  const { user } = useAuth();
+  
+  // Check if API key is configured
+  const [apiKeyConfigured, setApiKeyConfigured] = useState(() => {
+    return localStorage.getItem('threatradar_api_key') === 'sb_publishable__8DM0jjNknjvwE7yz0usSA_VDO5RgMP';
+  });
 
   // Fetch clients data
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ['clients'],
     queryFn: async () => {
+      if (!apiKeyConfigured) return [];
       const { data, error } = await supabase
         .from('clients')
         .select('*')
@@ -41,13 +51,15 @@ const SOCDashboard = () => {
       
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: apiKeyConfigured
   });
 
   // Fetch all logs and assets for dashboard overview
   const { data: allLogs = [] } = useQuery({
     queryKey: ['all-logs'],
     queryFn: async () => {
+      if (!apiKeyConfigured) return [];
       const { data, error } = await supabase
         .from('logs')
         .select('*')
@@ -55,12 +67,14 @@ const SOCDashboard = () => {
       
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: apiKeyConfigured
   });
 
   const { data: allAssets = [] } = useQuery({
     queryKey: ['all-assets'],
     queryFn: async () => {
+      if (!apiKeyConfigured) return [];
       const { data, error } = await supabase
         .from('assets')
         .select('*')
@@ -68,7 +82,8 @@ const SOCDashboard = () => {
       
       if (error) throw error;
       return data;
-    }
+    },
+    enabled: apiKeyConfigured
   });
 
   // Fetch assets data for selected client
@@ -85,7 +100,7 @@ const SOCDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedClient
+    enabled: !!selectedClient && apiKeyConfigured
   });
 
   // Fetch logs data for selected client
@@ -103,7 +118,7 @@ const SOCDashboard = () => {
       if (error) throw error;
       return data;
     },
-    enabled: !!selectedClient
+    enabled: !!selectedClient && apiKeyConfigured
   });
 
   // Calculate stats from real data
@@ -116,7 +131,7 @@ const SOCDashboard = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex items-center gap-2">
           <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Loading SOC Dashboard...</span>
+          <span>Loading ThreatRadar Dashboard...</span>
         </div>
       </div>
     );
@@ -130,14 +145,16 @@ const SOCDashboard = () => {
           <div className="container mx-auto px-6 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-gradient-primary">
-                  <Shield className="h-6 w-6 text-white" />
-                </div>
+                <img 
+                  src="/LOGO_ND_WHITE.png" 
+                  alt="NextDefense Logo" 
+                  className="h-10 w-auto"
+                />
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-                    SOC Command Center
+                  <h1 className="text-2xl font-bold text-white">
+                    ThreatRadar by NextDefense
                   </h1>
-                  <p className="text-muted-foreground text-sm">Security Operations Dashboard</p>
+                  <p className="text-muted-foreground text-sm">Advanced Threat Detection Platform</p>
                 </div>
               </div>
               <UserMenu />
@@ -151,11 +168,11 @@ const SOCDashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
             <Card className="border-soc-primary/20 bg-gradient-to-br from-card to-soc-surface">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+                <CardTitle className="text-sm font-medium">Total Tenant Clients</CardTitle>
                 <Users className="h-4 w-4 text-soc-primary" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-soc-primary">{clients.length}</div>
+                <div className="text-2xl font-bold text-soc-primary">{apiKeyConfigured ? clients.length : 0}</div>
                 <p className="text-xs text-muted-foreground">Active monitoring</p>
               </CardContent>
             </Card>
@@ -167,7 +184,7 @@ const SOCDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-soc-danger">
-                  {allLogs.filter(log => log.severity === 'high' || log.severity === 'critical').length}
+                  {apiKeyConfigured ? allLogs.filter(log => log.severity === 'high' || log.severity === 'critical').length : 0}
                 </div>
                 <p className="text-xs text-muted-foreground">Require attention</p>
               </CardContent>
@@ -180,7 +197,7 @@ const SOCDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold text-soc-success">
-                  {allAssets.length}
+                  {apiKeyConfigured ? allAssets.length : 0}
                 </div>
                 <p className="text-xs text-muted-foreground">Under monitoring</p>
               </CardContent>
@@ -192,73 +209,163 @@ const SOCDashboard = () => {
                 <Activity className="h-4 w-4 text-soc-accent" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-soc-accent">99.8%</div>
+                <div className="text-2xl font-bold text-soc-accent">{apiKeyConfigured ? '99.8%' : '0%'}</div>
                 <p className="text-xs text-muted-foreground">System availability</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* Client Selection */}
-          <Card className="shadow-elevated">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                My Clients
-              </CardTitle>
-              <CardDescription>
-                Select a client to access their security workspace
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {clients.map((client) => {
-                  // Get client-specific stats
-                  const clientAssets = allAssets.filter(asset => asset.client_id === client.id).length;
-                  const clientAlerts = allLogs
-                    .filter(log => log.client_id === client.id && (log.severity === 'high' || log.severity === 'critical'))
-                    .length;
-                  
-                  return (
-                    <Card 
-                      key={client.id} 
-                      className="cursor-pointer transition-all duration-300 hover:shadow-glow hover:border-primary/50 bg-gradient-surface"
-                      onClick={() => setSelectedClient(client.id)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <CardTitle className="text-lg">{client.name}</CardTitle>
-                          <Badge 
-                            variant="default"
-                            className="bg-soc-success"
-                          >
-                            active
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Active Alerts</span>
-                          <span className={clientAlerts > 0 ? "text-soc-danger font-medium" : "text-soc-success"}>
-                            {clientAlerts}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Protected Assets</span>
-                          <span className="text-soc-accent font-medium">{clientAssets}</span>
-                        </div>
-                        <Button className="w-full mt-4 bg-gradient-primary hover:opacity-90">
-                          <Eye className="h-4 w-4 mr-2" />
-                          Access Workspace
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+          {!apiKeyConfigured ? (
+            <Card className="shadow-elevated">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="h-5 w-5" />
+                  API Configuration Required
+                </CardTitle>
+                <CardDescription>
+                  Please configure your API key in Settings to access tenant client data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="text-center py-8">
+                <Shield className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">
+                  To start monitoring tenant clients, you need to configure your API connection.
+                </p>
+                <Button 
+                  onClick={() => setSelectedClient('settings')}
+                  className="bg-gradient-primary hover:opacity-90"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Go to Settings
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            /* Tenant Client Selection */
+            <Card className="shadow-elevated">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  My Tenant Clients
+                </CardTitle>
+                <CardDescription>
+                  Select a tenant client to access their security workspace
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {clients.map((client) => {
+                    // Get client-specific stats
+                    const clientAssets = allAssets.filter(asset => asset.client_id === client.id).length;
+                    const clientAlerts = allLogs
+                      .filter(log => log.client_id === client.id && (log.severity === 'high' || log.severity === 'critical'))
+                      .length;
+                    
+                    return (
+                      <Card 
+                        key={client.id} 
+                        className="cursor-pointer transition-all duration-300 hover:shadow-glow hover:border-primary/50 bg-gradient-surface"
+                        onClick={() => setSelectedClient(client.id)}
+                      >
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-lg">{client.name}</CardTitle>
+                            <Badge 
+                              variant="default"
+                              className="bg-soc-success"
+                            >
+                              active
+                            </Badge>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Active Alerts</span>
+                            <span className={clientAlerts > 0 ? "text-soc-danger font-medium" : "text-soc-success"}>
+                              {clientAlerts}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Protected Assets</span>
+                            <span className="text-soc-accent font-medium">{clientAssets}</span>
+                          </div>
+                          <Button className="w-full mt-4 bg-gradient-primary hover:opacity-90">
+                            <Eye className="h-4 w-4 mr-2" />
+                            Access Workspace
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </main>
       </div>
+    );
+  }
+
+  // Handle settings tab
+  if (selectedClient === 'settings') {
+    return (
+      <div className="min-h-screen bg-background">
+        {/* Header */}
+        <header className="border-b border-border bg-card/50 backdrop-blur sticky top-0 z-50">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => setSelectedClient(null)}
+                  className="text-muted-foreground hover:text-foreground"
+                >
+                  ← Back to Dashboard
+                </Button>
+                <div className="h-6 w-px bg-border" />
+                <div className="flex items-center space-x-3">
+                  <img 
+                    src="/LOGO_ND_WHITE.png" 
+                    alt="NextDefense Logo" 
+                    className="h-8 w-auto"
+                  />
+                  <div>
+                    <h1 className="text-xl font-bold text-white">Settings</h1>
+                    <p className="text-muted-foreground text-sm">ThreatRadar Configuration</p>
+                  </div>
+                </div>
+              </div>
+              <UserMenu />
+            </div>
+          </div>
+        </header>
+
+        <main className="container mx-auto px-6 py-6">
+          <SettingsTab 
+            apiKeyConfigured={apiKeyConfigured}
+            onApiKeyConfigured={setApiKeyConfigured}
+          />
+        </main>
+      </div>
+    );
+  }
+
+  // Handle asset threats view
+  if (selectedClient?.startsWith('asset-')) {
+    const assetId = selectedClient.replace('asset-', '');
+    return (
+      <AssetThreatsView 
+        assetId={assetId}
+        onBack={() => {
+          // Find the client that owns this asset
+          const asset = allAssets.find(a => a.id === assetId);
+          if (asset) {
+            setSelectedClient(asset.client_id);
+          } else {
+            setSelectedClient(null);
+          }
+        }}
+      />
     );
   }
 
@@ -276,13 +383,15 @@ const SOCDashboard = () => {
                 onClick={() => setSelectedClient(null)}
                 className="text-muted-foreground hover:text-foreground"
               >
-                ← Back to Clients
+                ← Back to Tenant Clients
               </Button>
               <div className="h-6 w-px bg-border" />
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-gradient-primary">
-                  <Shield className="h-5 w-5 text-white" />
-                </div>
+                <img 
+                  src="/LOGO_ND_WHITE.png" 
+                  alt="NextDefense Logo" 
+                  className="h-8 w-auto"
+                />
                 <div>
                   <h1 className="text-xl font-bold">{selectedClientData?.name}</h1>
                   <p className="text-muted-foreground text-sm">Security Workspace</p>
@@ -297,7 +406,7 @@ const SOCDashboard = () => {
       {/* Client Workspace */}
       <main className="container mx-auto px-6 py-6">
         <Tabs defaultValue="monitor" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5 lg:grid-cols-5 bg-card border border-border">
+          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-6 bg-card border border-border">
             <TabsTrigger value="monitor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Monitor className="h-4 w-4 mr-2" />
               Monitor
@@ -317,6 +426,10 @@ const SOCDashboard = () => {
             <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <History className="h-4 w-4 mr-2" />
               History
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Settings className="h-4 w-4 mr-2" />
+              Settings
             </TabsTrigger>
           </TabsList>
 
@@ -423,6 +536,7 @@ const SOCDashboard = () => {
                             <TableHead>IP Address</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Vulnerabilities</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -450,13 +564,22 @@ const SOCDashboard = () => {
                                   <Badge className="bg-soc-success">Clean</Badge>
                                 )}
                               </TableCell>
+                              <TableCell>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => setSelectedClient(`asset-${asset.id}`)}
+                                >
+                                  View Threats
+                                </Button>
+                              </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
                     ) : (
                       <div className="text-center py-8 text-muted-foreground">
-                        No assets found for this client
+                        No assets found for this tenant client
                       </div>
                     )}
                   </CardContent>
@@ -488,6 +611,13 @@ const SOCDashboard = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="settings" className="space-y-6">
+            <SettingsTab 
+              apiKeyConfigured={apiKeyConfigured}
+              onApiKeyConfigured={setApiKeyConfigured}
+            />
           </TabsContent>
         </Tabs>
       </main>

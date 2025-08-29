@@ -73,8 +73,12 @@ const Login = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-primary mb-4">
-            <Shield className="h-8 w-8 text-white" />
+          <div className="mb-4">
+            <img 
+              src="/LOGO_ND_WHITE.png" 
+              alt="NextDefense Logo" 
+              className="h-16 w-auto mx-auto"
+            />
           </div>
           <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             SOC Command Center
