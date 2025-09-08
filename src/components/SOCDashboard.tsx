@@ -6,10 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ReportsTab } from "@/components/reports/ReportsTab";
 import { SettingsTab } from "@/components/settings/SettingsTab";
+import { ClientMonitorDashboard } from "@/components/ClientMonitorDashboard";
 import { 
   Shield, 
   Users, 
@@ -434,60 +436,11 @@ const SOCDashboard = () => {
           </TabsList>
 
           <TabsContent value="monitor" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <Card className="lg:col-span-3 shadow-elevated">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5 text-soc-primary" />
-                    Live Classifications
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {logs.slice(0, 5).map((log) => {
-                      const getBadgeColor = (label: string) => {
-                        switch (label) {
-                          case 'TP': return 'bg-soc-success';
-                          case 'TN': return 'bg-soc-success';
-                          case 'FP': return 'bg-soc-danger';
-                          case 'FN': return 'bg-soc-warning';
-                          default: return 'bg-gray-500';
-                        }
-                      };
-
-                      const getBadgeText = (label: string) => {
-                        switch (label) {
-                          case 'TP': return 'True Positive';
-                          case 'TN': return 'True Negative';
-                          case 'FP': return 'False Positive';
-                          case 'FN': return 'False Negative';
-                          default: return 'Unknown';
-                        }
-                      };
-
-                      return (
-                        <div key={log.event_id} className="flex items-center justify-between p-3 rounded-lg bg-soc-surface border border-border/20">
-                          <div>
-                            <div className="font-medium">{log.alert_name || log.event_type}</div>
-                            <div className="text-sm text-muted-foreground">
-                              {log.host_ip} - {log.host_name || 'Unknown Host'}
-                            </div>
-                          </div>
-                          <Badge className={getBadgeColor(log.label)}>
-                            {getBadgeText(log.label)}
-                          </Badge>
-                        </div>
-                      );
-                    })}
-                    {logs.length === 0 && (
-                      <div className="text-center py-8 text-muted-foreground">
-                        No recent classifications available
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <ClientMonitorDashboard 
+              clientId={selectedClient}
+              logs={logs}
+              assets={assets}
+            />
           </TabsContent>
 
           <TabsContent value="ai-assistant" className="space-y-6">
