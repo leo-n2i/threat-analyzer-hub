@@ -1,11 +1,11 @@
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Server, AlertTriangle, Clock, User, Network, FileText } from 'lucide-react';
+import { ArrowLeft, Server, AlertTriangle, Clock, User, Network, FileText, Shield } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface AssetThreatsViewProps {
