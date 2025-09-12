@@ -12,6 +12,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ReportsTab } from "@/components/reports/ReportsTab";
 import { SettingsTab } from "@/components/settings/SettingsTab";
 import { ClientMonitorDashboard } from "@/components/ClientMonitorDashboard";
+import { useRBAC } from "@/hooks/useRBAC";
+import { Link } from "react-router-dom";
 import { 
   Shield, 
   Users, 
@@ -35,6 +37,7 @@ import { AssetThreatsView } from "@/components/AssetThreatsView";
 const SOCDashboard = () => {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
   const { user } = useAuth();
+  const { hasPermission } = useRBAC();
   
   // Check if API key is configured
   const [apiKeyConfigured, setApiKeyConfigured] = useState(() => {
@@ -159,7 +162,17 @@ const SOCDashboard = () => {
                   <p className="text-muted-foreground text-sm">Advanced Threat Detection Platform</p>
                 </div>
               </div>
-              <UserMenu />
+              <div className="flex items-center gap-4">
+                {hasPermission('manage_users') && (
+                  <Link to="/admin">
+                    <Button variant="outline" size="sm">
+                      <Settings className="h-4 w-4 mr-2" />
+                      Admin Panel
+                    </Button>
+                  </Link>
+                )}
+                <UserMenu />
+              </div>
             </div>
           </div>
         </header>

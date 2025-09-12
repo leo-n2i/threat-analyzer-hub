@@ -198,15 +198,134 @@ export type Database = {
           },
         ]
       }
+      profiles: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roles: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          permissions: Database["public"]["Enums"]["app_permission"][] | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: Database["public"]["Enums"]["app_permission"][] | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: Database["public"]["Enums"]["app_permission"][] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_roles_role_id_fkey"
+            columns: ["role_id"]
+            isOneToOne: false
+            referencedRelation: "roles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_permissions: {
+        Args: { user_uuid: string }
+        Returns: Database["public"]["Enums"]["app_permission"][]
+      }
+      has_permission: {
+        Args: {
+          permission_name: Database["public"]["Enums"]["app_permission"]
+          user_uuid: string
+        }
+        Returns: boolean
+      }
+      is_super_admin: {
+        Args: { user_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_permission:
+        | "manage_users"
+        | "manage_roles"
+        | "view_all_clients"
+        | "manage_clients"
+        | "view_logs"
+        | "manage_logs"
+        | "view_assets"
+        | "manage_assets"
+        | "view_reports"
+        | "manage_reports"
+      app_role: "super_admin" | "soc_admin" | "client_user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -333,6 +452,20 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_permission: [
+        "manage_users",
+        "manage_roles",
+        "view_all_clients",
+        "manage_clients",
+        "view_logs",
+        "manage_logs",
+        "view_assets",
+        "manage_assets",
+        "view_reports",
+        "manage_reports",
+      ],
+      app_role: ["super_admin", "soc_admin", "client_user"],
+    },
   },
 } as const
