@@ -4,8 +4,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { RoleManagement } from '@/components/admin/RoleManagement';
-import { Shield, Users, Settings } from 'lucide-react';
+import { Shield, Users, Settings, Building2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Link } from 'react-router-dom';
 
 export default function Admin() {
   const { hasPermission, loading } = useRBAC();
@@ -35,7 +36,7 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="users" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             User Management
@@ -43,6 +44,12 @@ export default function Admin() {
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Role Management
+          </TabsTrigger>
+          <TabsTrigger value="tenants" asChild>
+            <Link to="/admin/tenants" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Tenant Management
+            </Link>
           </TabsTrigger>
         </TabsList>
 
