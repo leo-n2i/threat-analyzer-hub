@@ -155,25 +155,25 @@ export function UserManagement() {
         <h2 className="text-2xl font-semibold">Users</h2>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled>
               <Plus className="h-4 w-4 mr-2" />
-              Add User
+              Add User (Users must sign up)
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>
-                {editingUser ? 'Edit User' : 'Add New User'}
-              </DialogTitle>
+              <DialogTitle>Edit User</DialogTitle>
             </DialogHeader>
-            <UserForm
-              user={editingUser}
-              roles={roles}
-              clients={clients}
-              onSubmit={updateUserProfile}
-              onAssignRole={assignRole}
-              onRemoveRole={removeRole}
-            />
+            {editingUser && (
+              <UserForm
+                user={editingUser}
+                roles={roles}
+                clients={clients}
+                onSubmit={updateUserProfile}
+                onAssignRole={assignRole}
+                onRemoveRole={removeRole}
+              />
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -242,7 +242,7 @@ function UserForm({ user, roles, clients, onSubmit, onAssignRole, onRemoveRole }
     if (user) {
       onSubmit(user.user_id, {
         display_name: displayName,
-        client_id: clientId || null
+        client_id: clientId === 'none' ? null : clientId
       });
     }
   };
