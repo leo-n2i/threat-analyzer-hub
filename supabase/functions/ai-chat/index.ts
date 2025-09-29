@@ -99,10 +99,11 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('AI Chat Error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return new Response(
       JSON.stringify({ 
         error: 'Failed to process request',
-        details: error.message 
+        details: errorMessage 
       }),
       { 
         status: 500,
