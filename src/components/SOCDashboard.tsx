@@ -29,10 +29,12 @@ import {
   Eye,
   TrendingUp,
   Zap,
-  Loader2
+  Loader2,
+  Database
 } from "lucide-react";
 import { AIAssistant } from "@/components/AIAssistant";
 import { AssetThreatsView } from "@/components/AssetThreatsView";
+import { KnowledgeManager } from "@/components/KnowledgeManager";
 
 const SOCDashboard = () => {
   const [selectedClient, setSelectedClient] = useState<string | null>(null);
@@ -421,7 +423,7 @@ const SOCDashboard = () => {
       {/* Client Workspace */}
       <main className="container mx-auto px-6 py-6">
         <Tabs defaultValue="monitor" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 lg:grid-cols-6 bg-card border border-border">
+          <TabsList className="grid w-full grid-cols-7 lg:grid-cols-7 bg-card border border-border">
             <TabsTrigger value="monitor" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Monitor className="h-4 w-4 mr-2" />
               Monitor
@@ -433,6 +435,10 @@ const SOCDashboard = () => {
             <TabsTrigger value="ai-assistant" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Zap className="h-4 w-4 mr-2" />
               AI Assistant
+            </TabsTrigger>
+            <TabsTrigger value="knowledge" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <Database className="h-4 w-4 mr-2" />
+              RAG Knowledge
             </TabsTrigger>
             <TabsTrigger value="reports" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <FileText className="h-4 w-4 mr-2" />
@@ -457,7 +463,20 @@ const SOCDashboard = () => {
           </TabsContent>
 
           <TabsContent value="ai-assistant" className="space-y-6">
-            <AIAssistant 
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AIAssistant 
+                clientId={selectedClient}
+                clientName={selectedClientData?.name}
+              />
+              <KnowledgeManager 
+                clientId={selectedClient}
+                clientName={selectedClientData?.name}
+              />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="knowledge" className="space-y-6">
+            <KnowledgeManager 
               clientId={selectedClient}
               clientName={selectedClientData?.name}
             />

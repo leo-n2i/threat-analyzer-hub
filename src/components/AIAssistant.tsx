@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { MessageSquare, Send, Bot, User, Brain, AlertCircle, Shield, Activity } from 'lucide-react';
+import { MessageSquare, Send, Bot, User, Brain, AlertCircle, Shield, Activity, Database } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -16,8 +16,10 @@ interface Message {
   sender: 'user' | 'ai';
   timestamp: Date;
   context?: {
-    events: number;
-    assets: number;
+    events?: number;
+    assets?: number;
+    documentsFound?: number;
+    hasContext?: boolean;
   };
 }
 
@@ -75,7 +77,7 @@ What security challenge can I help you tackle today?`,
     },
   ];
 
-  const handleSendMessage = async (messageText?: string) => {
+  const handleSendMessage = async (messageText?: string, useRAG?: boolean) => {
     const messageToSend = messageText || inputValue;
     if (!messageToSend.trim() || !clientId) return;
 
@@ -99,7 +101,10 @@ What security challenge can I help you tackle today?`,
           content: msg.content
         }));
 
-      const { data } = await supabase.functions.invoke('ai-chat', {
+      // Choose between RAG-enabled chat and regular OpenAI chat
+      const functionName = useRAG ? 'ollama-rag-chat' : 'ai-chat';
+      
+      const { data } = await supabase.functions.invoke(functionName, {
         body: {
           message: messageToSend,
           clientId: clientId,
@@ -185,6 +190,16 @@ What security challenge can I help you tackle today?`,
                   {action.label}
                 </Button>
               ))}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleSendMessage("Search the knowledge base for relevant security policies and procedures", true)}
+                className="flex items-center gap-1"
+                disabled={isLoading}
+              >
+                <Database className="h-3 w-3" />
+                RAG Search
+              </Button>
             </div>
           </div>
         )}
@@ -218,7 +233,13 @@ What security challenge can I help you tackle today?`,
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Brain className="h-3 w-3" />
                         <span>
-                          Analyzed {message.context.events} events, {message.context.assets} assets
+                          {message.context.events !== undefined && message.context.assets !== undefined ? (
+                            `Analyzed ${message.context.events} events, ${message.context.assets} assets`
+                          ) : message.context.documentsFound !== undefined ? (
+                            `Found ${message.context.documentsFound} relevant documents in knowledge base`
+                          ) : (
+                            'AI Analysis Complete'
+                          )}
                         </span>
                       </div>
                     </div>
@@ -273,14 +294,24 @@ What security challenge can I help you tackle today?`,
               onClick={() => handleSendMessage()}
               disabled={!inputValue.trim() || isLoading || !clientId}
               size="icon"
+              title="Send with OpenAI"
             >
               <Send className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => handleSendMessage(inputValue, true)}
+              disabled={!inputValue.trim() || isLoading || !clientId}
+              variant="outline"
+              size="icon"
+              title="Send with RAG (Ollama + Knowledge Base)"
+            >
+              <Database className="h-4 w-4" />
             </Button>
           </div>
           {clientId && (
             <div className="flex items-center gap-1 mt-2 text-xs text-muted-foreground">
               <Shield className="h-3 w-3" />
-              <span>Powered by AI security analysis • Data from {clientName}</span>
+              <span>AI analysis • Data from {clientName} • RAG button uses Ollama + Vector DB</span>
             </div>
           )}
         </div>
