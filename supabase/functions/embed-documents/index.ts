@@ -81,7 +81,7 @@ serve(async (req) => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            model: 'llama2', // or 'llama3.2' if available
+            model: 'nomic-embed-text',
             prompt: chunk
           })
         });

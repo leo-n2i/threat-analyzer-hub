@@ -146,7 +146,7 @@ Remediation: ${vuln.remediation || 'No remediation info'}`;
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              model: 'llama2',
+              model: 'nomic-embed-text',
               prompt: doc.content
             })
           });
@@ -264,7 +264,7 @@ Remediation: ${vuln.remediation || 'No remediation info'}`;
             disabled={!clientId}
           />
           <p className="text-xs text-muted-foreground">
-            Make sure Ollama is running with llama2 model available
+            Make sure Ollama is running with nomic-embed-text model (run: ollama pull nomic-embed-text)
           </p>
         </div>
 
@@ -341,7 +341,7 @@ Remediation: ${vuln.remediation || 'No remediation info'}`;
             <li>• <strong>Sync Vulnerabilities:</strong> Automatically embed all vulnerabilities from the assets table</li>
             <li>• <strong>Add Documents:</strong> Manually add security policies, procedures, or other documents</li>
             <li>• <strong>Ask Questions:</strong> Use the RAG button in AI Assistant to query with Ollama + context</li>
-            <li>• All embeddings are generated locally with your Ollama instance (llama2 model)</li>
+            <li>• All embeddings are generated locally with your Ollama instance (nomic-embed-text model)</li>
           </ul>
         </div>
       </CardContent>
