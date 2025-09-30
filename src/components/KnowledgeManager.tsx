@@ -134,28 +134,66 @@ Remediation: ${vuln.remediation || 'No remediation info'}`;
         return;
       }
 
-      console.log(`Syncing ${documentsToEmbed.length} vulnerabilities to RAG system...`);
+      console.log(`Syncing ${documentsToEmbed.length} vulnerabilities locally with Ollama...`);
 
-      // Send to embed-documents function
-      const { data, error } = await supabase.functions.invoke('embed-documents', {
-        body: {
-          documents: documentsToEmbed,
-          clientId: clientId,
-          ollamaUrl: ollamaUrl
-        }
-      });
-
-      if (error) {
-        throw new Error(error.message || 'Failed to sync vulnerabilities');
-      }
-
-      if (data?.error) {
-        throw new Error(data.error);
-      }
-
-      setUploadedCount(prev => prev + (data?.chunksProcessed || 0));
+      // Generate embeddings locally using Ollama
+      const embeddedChunks = [];
       
-      toast.success(`Successfully synced ${documentsToEmbed.length} vulnerabilities (${data?.chunksProcessed || 0} chunks) to RAG system!`);
+      for (const doc of documentsToEmbed) {
+        try {
+          // Generate embedding using local Ollama
+          const embeddingResponse = await fetch(`${ollamaUrl}/api/embeddings`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              model: 'llama2',
+              prompt: doc.content
+            })
+          });
+
+          if (!embeddingResponse.ok) {
+            console.error('Failed to generate embedding for document:', doc.content.substring(0, 100));
+            continue;
+          }
+
+          const embeddingData = await embeddingResponse.json();
+          const embedding = embeddingData.embedding;
+
+          if (!embedding || !Array.isArray(embedding)) {
+            console.error('Invalid embedding received from Ollama');
+            continue;
+          }
+
+          embeddedChunks.push({
+            content: doc.content,
+            metadata: doc.metadata,
+            embedding: embedding,
+            client_id: clientId
+          });
+        } catch (error) {
+          console.error('Error generating embedding:', error);
+          continue;
+        }
+      }
+
+      if (embeddedChunks.length === 0) {
+        throw new Error('No embeddings could be generated. Make sure Ollama is running.');
+      }
+
+      console.log(`Generated ${embeddedChunks.length} embeddings, storing in database...`);
+
+      // Store embeddings in database
+      const { error: insertError } = await supabase
+        .from('knowledge_base')
+        .insert(embeddedChunks);
+
+      if (insertError) {
+        throw new Error(`Failed to store embeddings: ${insertError.message}`);
+      }
+
+      setUploadedCount(prev => prev + embeddedChunks.length);
+      
+      toast.success(`Successfully synced ${embeddedChunks.length} vulnerabilities to RAG system!`);
       
     } catch (error) {
       console.error('Error syncing vulnerabilities:', error);
