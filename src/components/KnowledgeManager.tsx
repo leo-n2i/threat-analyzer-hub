@@ -17,6 +17,7 @@ interface KnowledgeManagerProps {
 export const KnowledgeManager: React.FC<KnowledgeManagerProps> = ({ clientId, clientName }) => {
   const [documents, setDocuments] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [ollamaUrl, setOllamaUrl] = useState('http://localhost:11434');
   const [uploadedCount, setUploadedCount] = useState(0);
 
@@ -70,6 +71,97 @@ export const KnowledgeManager: React.FC<KnowledgeManagerProps> = ({ clientId, cl
       toast.error(`Failed to upload documents: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleSyncVulnerabilities = async () => {
+    if (!clientId) {
+      toast.error('Please select a client');
+      return;
+    }
+
+    setIsSyncing(true);
+
+    try {
+      // Fetch all assets with vulnerabilities for this client
+      const { data: assets, error: fetchError } = await supabase
+        .from('assets')
+        .select('*')
+        .eq('client_id', clientId);
+
+      if (fetchError) throw fetchError;
+
+      if (!assets || assets.length === 0) {
+        toast.error('No assets found for this client');
+        return;
+      }
+
+      // Format vulnerabilities as documents
+      const documentsToEmbed = [];
+      
+      for (const asset of assets) {
+        const vulnerabilities = (asset.vulnerabilities as any[]) || [];
+        
+        for (const vuln of vulnerabilities) {
+          const content = `Asset: ${asset.name} (${asset.ip_address})
+Vulnerability: ${vuln.name || vuln.title || 'Unknown'}
+Severity: ${vuln.severity || 'Unknown'}
+Status: ${vuln.status || 'Open'}
+Description: ${vuln.description || 'No description'}
+CVE: ${vuln.cve || 'N/A'}
+CVSS Score: ${vuln.cvss_score || 'N/A'}
+Remediation: ${vuln.remediation || 'No remediation info'}`;
+
+          documentsToEmbed.push({
+            content: content,
+            metadata: {
+              source: 'vulnerability_sync',
+              asset_id: asset.id,
+              asset_name: asset.name,
+              asset_ip: asset.ip_address,
+              vulnerability_name: vuln.name || vuln.title || 'Unknown',
+              severity: vuln.severity || 'Unknown',
+              cve: vuln.cve || 'N/A',
+              syncedAt: new Date().toISOString(),
+              clientName: clientName || 'Unknown'
+            }
+          });
+        }
+      }
+
+      if (documentsToEmbed.length === 0) {
+        toast.error('No vulnerabilities found to sync');
+        return;
+      }
+
+      console.log(`Syncing ${documentsToEmbed.length} vulnerabilities to RAG system...`);
+
+      // Send to embed-documents function
+      const { data, error } = await supabase.functions.invoke('embed-documents', {
+        body: {
+          documents: documentsToEmbed,
+          clientId: clientId,
+          ollamaUrl: ollamaUrl
+        }
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to sync vulnerabilities');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      setUploadedCount(prev => prev + (data?.chunksProcessed || 0));
+      
+      toast.success(`Successfully synced ${documentsToEmbed.length} vulnerabilities (${data?.chunksProcessed || 0} chunks) to RAG system!`);
+      
+    } catch (error) {
+      console.error('Error syncing vulnerabilities:', error);
+      toast.error(`Failed to sync vulnerabilities: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -155,42 +247,63 @@ export const KnowledgeManager: React.FC<KnowledgeManagerProps> = ({ clientId, cl
         </div>
 
         {/* Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2">
+          <div className="flex gap-2">
+            <Button 
+              onClick={handleDocumentUpload}
+              disabled={!documents.trim() || !clientId || isUploading || isSyncing}
+              className="flex-1"
+            >
+              {isUploading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Embedding...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Add to Knowledge Base
+                </>
+              )}
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={handleClearKnowledge}
+              disabled={!clientId || isUploading || isSyncing}
+            >
+              Clear Knowledge
+            </Button>
+          </div>
+
           <Button 
-            onClick={handleDocumentUpload}
-            disabled={!documents.trim() || !clientId || isUploading}
-            className="flex-1"
+            onClick={handleSyncVulnerabilities}
+            disabled={!clientId || isUploading || isSyncing}
+            variant="secondary"
+            className="w-full"
           >
-            {isUploading ? (
+            {isSyncing ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Embedding...
+                Syncing Vulnerabilities...
               </>
             ) : (
               <>
-                <Upload className="h-4 w-4 mr-2" />
-                Add to Knowledge Base
+                <Database className="h-4 w-4 mr-2" />
+                Sync Vulnerabilities to RAG
               </>
             )}
-          </Button>
-          
-          <Button 
-            variant="outline"
-            onClick={handleClearKnowledge}
-            disabled={!clientId || isUploading}
-          >
-            Clear Knowledge
           </Button>
         </div>
 
         {/* Instructions */}
         <div className="mt-4 p-3 bg-muted rounded-lg">
-          <h4 className="font-medium text-sm mb-2">How RAG Works:</h4>
+          <h4 className="font-medium text-sm mb-2">How to Use:</h4>
           <ul className="text-xs text-muted-foreground space-y-1">
-            <li>• Documents are chunked and embedded using Ollama's llama2 model</li>
-            <li>• Embeddings are stored in Supabase's vector database</li>
-            <li>• AI chat retrieves relevant context before generating responses</li>
-            <li>• Responses are generated locally using Ollama (no external API needed)</li>
+            <li>• <strong>Sync Vulnerabilities:</strong> Automatically embed all vulnerabilities from the assets table</li>
+            <li>• <strong>Add Documents:</strong> Manually add security policies, procedures, or other documents</li>
+            <li>• <strong>Ask Questions:</strong> Use the RAG button in AI Assistant to query with Ollama + context</li>
+            <li>• All embeddings are generated locally with your Ollama instance (llama2 model)</li>
           </ul>
         </div>
       </CardContent>
