@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { Plus } from 'lucide-react';
-import { useRBAC } from '@/hooks/useRBAC';
+
 const createTenantSchema = z.object({
   name: z.string().min(1, 'Tenant name is required').max(100, 'Name must be less than 100 characters'),
   email: z.string().email('Invalid email address').max(255, 'Email must be less than 255 characters'),
@@ -39,41 +39,29 @@ interface CreateTenantDialogProps {
 export function CreateTenantDialog({ onTenantCreated }: CreateTenantDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-const { toast } = useToast();
-const { userProfile } = useRBAC();
+  const { toast } = useToast();
 
-const form = useForm<CreateTenantFormData>({
-  resolver: zodResolver(createTenantSchema),
-  defaultValues: {
-    name: '',
-    email: '',
-  },
-});
+  const form = useForm<CreateTenantFormData>({
+    resolver: zodResolver(createTenantSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+    },
+  });
 
-const onSubmit = async (data: CreateTenantFormData) => {
-  try {
-    setLoading(true);
+  const onSubmit = async (data: CreateTenantFormData) => {
+    try {
+      setLoading(true);
 
-    if (!userProfile?.company_id) {
-      toast({
-        title: 'Missing company context',
-        description: 'Your profile is missing a company. Contact an administrator.',
-        variant: 'destructive',
-      });
-      setLoading(false);
-      return;
-    }
+      const { error } = await supabase
+        .from('clients')
+        .insert({
+          name: data.name,
+          email: data.email,
+          settings: { status: 'active' },
+        });
 
-    const { error } = await supabase
-      .from('clients')
-      .insert({
-        name: data.name,
-        email: data.email,
-        company_id: userProfile.company_id,
-        settings: { status: 'active' },
-      });
-
-    if (error) throw error;
+      if (error) throw error;
 
       toast({
         title: 'Success',

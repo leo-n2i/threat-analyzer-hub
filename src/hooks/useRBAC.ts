@@ -20,7 +20,6 @@ export interface UserProfile {
   display_name: string | null;
   email: string | null;
   client_id: string | null;
-  company_id?: string | null;
   created_at: string;
   updated_at: string;
 }
