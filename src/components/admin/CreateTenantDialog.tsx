@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { useRBAC } from '@/hooks/useRBAC';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -40,6 +41,7 @@ export function CreateTenantDialog({ onTenantCreated }: CreateTenantDialogProps)
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { userProfile } = useRBAC();
 
   const form = useForm<CreateTenantFormData>({
     resolver: zodResolver(createTenantSchema),
@@ -53,11 +55,21 @@ export function CreateTenantDialog({ onTenantCreated }: CreateTenantDialogProps)
     try {
       setLoading(true);
 
+      if (!userProfile?.company_id) {
+        toast({
+          title: 'Error',
+          description: 'You must be associated with a company to create tenants',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       const { error } = await supabase
         .from('clients')
         .insert({
           name: data.name,
           email: data.email,
+          company_id: userProfile.company_id,
           settings: { status: 'active' },
         });
 

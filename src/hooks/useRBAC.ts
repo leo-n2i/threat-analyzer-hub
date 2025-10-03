@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
+export type UserRole = 'super_admin' | 'soc_admin' | 'client_user';
+
 export type Permission = 
   | 'manage_users'
   | 'manage_roles' 
@@ -20,6 +22,8 @@ export interface UserProfile {
   display_name: string | null;
   email: string | null;
   client_id: string | null;
+  company_id: string | null;
+  role: UserRole | null;
   created_at: string;
   updated_at: string;
 }
@@ -85,7 +89,19 @@ export function useRBAC() {
   };
 
   const isSuperAdmin = (): boolean => {
-    return hasPermission('manage_users') && hasPermission('manage_roles');
+    return userProfile?.role === 'super_admin';
+  };
+
+  const isSOCAdmin = (): boolean => {
+    return userProfile?.role === 'soc_admin';
+  };
+
+  const isSOCAdminOrHigher = (): boolean => {
+    return userProfile?.role === 'super_admin' || userProfile?.role === 'soc_admin';
+  };
+
+  const isClientUser = (): boolean => {
+    return userProfile?.role === 'client_user';
   };
 
   return {
@@ -95,6 +111,9 @@ export function useRBAC() {
     hasPermission,
     hasAnyPermission,
     isSuperAdmin,
+    isSOCAdmin,
+    isSOCAdminOrHigher,
+    isClientUser,
     refetch: fetchUserProfileAndPermissions
   };
 }
