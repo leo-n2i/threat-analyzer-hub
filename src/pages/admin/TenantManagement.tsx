@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TenantTable } from '@/components/admin/TenantTable';
 import { TenantForm } from '@/components/admin/TenantForm';
-import { CreateTenantDialog } from '@/components/admin/CreateTenantDialog';
 import { useRBAC } from '@/hooks/useRBAC';
 import { Navigate } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -27,7 +26,6 @@ export default function TenantManagement() {
   const { hasPermission, loading } = useRBAC();
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [activeTab, setActiveTab] = useState('list');
-  const [refreshKey, setRefreshKey] = useState(0);
 
   // Check if user is Super Admin
   const canManageTenants = hasPermission('manage_users') && hasPermission('manage_roles');
@@ -58,27 +56,19 @@ export default function TenantManagement() {
     setActiveTab('list');
   };
 
-  const handleTenantCreated = () => {
-    setRefreshKey(prev => prev + 1);
-    setActiveTab('list');
-  };
-
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link to="/admin">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Admin
-            </Button>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Building2 className="h-6 w-6 text-primary" />
-            <h1 className="text-3xl font-bold">Tenant Management</h1>
-          </div>
+      <div className="flex items-center gap-4">
+        <Link to="/admin">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Admin
+          </Button>
+        </Link>
+        <div className="flex items-center gap-2">
+          <Building2 className="h-6 w-6 text-primary" />
+          <h1 className="text-3xl font-bold">Tenant Management</h1>
         </div>
-        <CreateTenantDialog onTenantCreated={handleTenantCreated} />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -95,7 +85,7 @@ export default function TenantManagement() {
               <CardTitle>All Tenants</CardTitle>
             </CardHeader>
             <CardContent>
-              <TenantTable key={refreshKey} onEditTenant={handleEditTenant} />
+              <TenantTable onEditTenant={handleEditTenant} />
             </CardContent>
           </Card>
         </TabsContent>
