@@ -82,7 +82,6 @@ export function TenantTable({ onEditTenant }: TenantTableProps) {
           id: client.id,
           name: client.name,
           email: client.email,
-          company_id: client.company_id,
           created_at: client.created_at,
           settings
         };

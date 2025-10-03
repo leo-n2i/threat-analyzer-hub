@@ -15,7 +15,6 @@ export interface Tenant {
   id: string;
   name: string;
   email: string;
-  company_id: string;
   created_at: string;
   settings: {
     api_key?: string;
@@ -25,13 +24,13 @@ export interface Tenant {
 }
 
 export default function TenantManagement() {
-  const { isSuperAdmin, loading } = useRBAC();
+  const { hasPermission, loading } = useRBAC();
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [activeTab, setActiveTab] = useState('list');
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Only Super Admins can manage tenants
-  const canManageTenants = isSuperAdmin();
+  // Check if user is Super Admin
+  const canManageTenants = hasPermission('manage_users') && hasPermission('manage_roles');
 
   if (loading) {
     return (

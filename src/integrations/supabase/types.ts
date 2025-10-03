@@ -54,7 +54,6 @@ export type Database = {
       }
       clients: {
         Row: {
-          company_id: string | null
           created_at: string
           email: string
           id: string
@@ -62,7 +61,6 @@ export type Database = {
           settings: Json | null
         }
         Insert: {
-          company_id?: string | null
           created_at?: string
           email: string
           id?: string
@@ -70,47 +68,11 @@ export type Database = {
           settings?: Json | null
         }
         Update: {
-          company_id?: string | null
           created_at?: string
           email?: string
           id?: string
           name?: string
           settings?: Json | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "clients_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      companies: {
-        Row: {
-          created_at: string
-          email: string
-          id: string
-          name: string
-          settings: Json | null
-          updated_at: string
-        }
-        Insert: {
-          created_at?: string
-          email: string
-          id?: string
-          name: string
-          settings?: Json | null
-          updated_at?: string
-        }
-        Update: {
-          created_at?: string
-          email?: string
-          id?: string
-          name?: string
-          settings?: Json | null
-          updated_at?: string
         }
         Relationships: []
       }
@@ -277,34 +239,28 @@ export type Database = {
       profiles: {
         Row: {
           client_id: string | null
-          company_id: string | null
           created_at: string
           display_name: string | null
           email: string | null
           id: string
-          role: Database["public"]["Enums"]["app_role"] | null
           updated_at: string
           user_id: string
         }
         Insert: {
           client_id?: string | null
-          company_id?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
           user_id: string
         }
         Update: {
           client_id?: string | null
-          company_id?: string | null
           created_at?: string
           display_name?: string | null
           email?: string | null
           id?: string
-          role?: Database["public"]["Enums"]["app_role"] | null
           updated_at?: string
           user_id?: string
         }
@@ -314,13 +270,6 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "profiles_company_id_fkey"
-            columns: ["company_id"]
-            isOneToOne: false
-            referencedRelation: "companies"
             referencedColumns: ["id"]
           },
         ]
@@ -389,10 +338,6 @@ export type Database = {
       binary_quantize: {
         Args: { "": string } | { "": unknown }
         Returns: unknown
-      }
-      get_user_company_id: {
-        Args: { _user_id: string }
-        Returns: string
       }
       get_user_permissions: {
         Args: { user_uuid: string }
@@ -487,21 +432,6 @@ export type Database = {
       sparsevec_typmod_in: {
         Args: { "": unknown[] }
         Returns: number
-      }
-      user_has_role: {
-        Args: {
-          _role: Database["public"]["Enums"]["app_role"]
-          _user_id: string
-        }
-        Returns: boolean
-      }
-      user_is_soc_admin_or_higher: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
-      user_is_super_admin: {
-        Args: { _user_id: string }
-        Returns: boolean
       }
       vector_avg: {
         Args: { "": number[] }
